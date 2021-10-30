@@ -164,7 +164,8 @@ NAN_METHOD(PtyFork) {
   signal(SIGINT, SIG_DFL);
 
   // file
-  String::Utf8Value file(info[0]->ToString());
+  //String::Utf8Value file(info[0]->ToString());
+  Nan::Utf8String file(info[0]);
 
   // args
   int i = 0;
@@ -175,7 +176,8 @@ NAN_METHOD(PtyFork) {
   argv[0] = strdup(*file);
   argv[argl-1] = NULL;
   for (; i < argc; i++) {
-    String::Utf8Value arg(argv_->Get(Nan::New<Integer>(i))->ToString());
+    //String::Utf8Value arg(argv_->Get(Nan::New<Integer>(i))->ToString());
+    Nan::Utf8String arg(argv_->Get(Nan::GetCurrentContext(), i).ToLocalChecked());
     argv[i+1] = strdup(*arg);
   }
 
@@ -186,24 +188,34 @@ NAN_METHOD(PtyFork) {
   char **env = new char*[envc+1];
   env[envc] = NULL;
   for (; i < envc; i++) {
-    String::Utf8Value pair(env_->Get(Nan::New<Integer>(i))->ToString());
+    //String::Utf8Value pair(env_->Get(Nan::New<Integer>(i))->ToString());
+    Nan::Utf8String pair(env_->Get(Nan::GetCurrentContext(), i).ToLocalChecked());
     env[i] = strdup(*pair);
   }
 
   // cwd
-  String::Utf8Value cwd_(info[3]->ToString());
+  //String::Utf8Value cwd_(info[3]->ToString());
+  Nan::Utf8String cwd_(info[3]);
   char *cwd = strdup(*cwd_);
 
   // size
   struct winsize winp;
-  winp.ws_col = info[4]->IntegerValue();
-  winp.ws_row = info[5]->IntegerValue();
+  //winp.ws_col = info[4]->IntegerValue();
+  //winp.ws_col = info[4]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  winp.ws_col = info[4]->IntegerValue(Nan::GetCurrentContext()).ToChecked();
+  //winp.ws_row = info[5]->IntegerValue();
+  //winp.ws_row = info[5]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  winp.ws_row = info[5]->IntegerValue(Nan::GetCurrentContext()).ToChecked();
   winp.ws_xpixel = 0;
   winp.ws_ypixel = 0;
 
   // uid / gid
-  int uid = info[6]->IntegerValue();
-  int gid = info[7]->IntegerValue();
+  //int uid = info[6]->IntegerValue();
+  //int uid = info[6]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  int uid = info[6]->IntegerValue(Nan::GetCurrentContext()).ToChecked();
+  //int gid = info[7]->IntegerValue();
+  //int gid = info[7]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  int gid = info[7]->IntegerValue(Nan::GetCurrentContext()).ToChecked();
 
   // fork the pty
   int master = -1;
@@ -288,8 +300,15 @@ NAN_METHOD(PtyOpen) {
 
   // size
   struct winsize winp;
-  winp.ws_col = info[0]->IntegerValue();
-  winp.ws_row = info[1]->IntegerValue();
+  //winp.ws_col = info[0]->IntegerValue();
+  //winp.ws_col = info[0]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  winp.ws_col = info[0]->IntegerValue(Nan::GetCurrentContext().ToChecked());
+  //winp.ws_col = info[0]->IntegerValue();
+  //winp.ws_col = info[0]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  winp.ws_col = info[0]->IntegerValue(Nan::GetCurrentContext()).ToChecked();
+  //winp.ws_row = info[1]->IntegerValue();
+  //winp.ws_row = info[1]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  winp.ws_row = info[1]->IntegerValue(Nan::GetCurrentContext()).ToChecked();
   winp.ws_xpixel = 0;
   winp.ws_ypixel = 0;
 
@@ -338,12 +357,17 @@ NAN_METHOD(PtyResize) {
       || !info[2]->IsNumber()) {
     return Nan::ThrowError("Usage: pty.resize(fd, cols, rows)");
   }
-
-  int fd = info[0]->IntegerValue();
+  //int fd = info[0]->IntegerValue();
+  //int fd = info[0]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  int fd = info[0]->IntegerValue(Nan::GetCurrentContext()).ToChecked();
 
   struct winsize winp;
-  winp.ws_col = info[1]->IntegerValue();
-  winp.ws_row = info[2]->IntegerValue();
+  //winp.ws_col = info[1]->IntegerValue();
+  //winp.ws_col = info[1]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  winp.ws_col = info[1]->IntegerValue(Nan::GetCurrentContext()).ToChecked();
+  //winp.ws_row = info[2]->IntegerValue();
+  //winp.ws_row = info[2]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  winp.ws_row = info[2]->IntegerValue(Nan::GetCurrentContext()).ToChecked();
   winp.ws_xpixel = 0;
   winp.ws_ypixel = 0;
 
@@ -369,9 +393,12 @@ NAN_METHOD(PtyGetProc) {
     return Nan::ThrowError("Usage: pty.process(fd, tty)");
   }
 
-  int fd = info[0]->IntegerValue();
+  //int fd = info[0]->IntegerValue();
+  //int fd = info[0]->IntegerValue(Nan::GetCurrentContext()).FromJust();
+  int fd = info[0]->IntegerValue(Nan::GetCurrentContext()).ToChecked();
 
-  String::Utf8Value tty_(info[1]->ToString());
+  //String::Utf8Value tty_(info[1]->ToString());
+  Nan::Utf8String tty_(info[1]);
   char *tty = strdup(*tty_);
   char *name = pty_getproc(fd, tty);
   free(tty);
@@ -684,16 +711,20 @@ NAN_MODULE_INIT(init) {
   Nan::HandleScope scope;
   Nan::Set(target,
     Nan::New<String>("fork").ToLocalChecked(),
-    Nan::New<FunctionTemplate>(PtyFork)->GetFunction());
+    //Nan::New<FunctionTemplate>(PtyFork)->GetFunction());
+    Nan::New<FunctionTemplate>(PtyFork)->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
   Nan::Set(target,
     Nan::New<String>("open").ToLocalChecked(),
-    Nan::New<FunctionTemplate>(PtyOpen)->GetFunction());
+    //Nan::New<FunctionTemplate>(PtyOpen)->GetFunction());
+    Nan::New<FunctionTemplate>(PtyOpen)->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
   Nan::Set(target,
     Nan::New<String>("resize").ToLocalChecked(),
-    Nan::New<FunctionTemplate>(PtyResize)->GetFunction());
+    //Nan::New<FunctionTemplate>(PtyResize)->GetFunction());
+    Nan::New<FunctionTemplate>(PtyResize)->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
   Nan::Set(target,
     Nan::New<String>("process").ToLocalChecked(),
-    Nan::New<FunctionTemplate>(PtyGetProc)->GetFunction());
+    //Nan::New<FunctionTemplate>(PtyGetProc)->GetFunction());
+    Nan::New<FunctionTemplate>(PtyGetProc)->GetFunction(Nan::GetCurrentContext()).ToLocalChecked());
 }
 
 NODE_MODULE(pty, init)
